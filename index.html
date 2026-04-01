@@ -1,0 +1,902 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Triple Stability Visual Tool</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --ink: #12233a;
+      --muted: #4e627e;
+      --card: rgba(255, 255, 255, 0.82);
+      --border: rgba(18, 35, 58, 0.12);
+      --accent: #0f7c7d;
+      --accent-strong: #05595a;
+      --danger: #a12828;
+      --ok: #0e6f35;
+      --panel-shadow: 0 16px 40px rgba(14, 32, 56, 0.12);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: "Space Grotesk", "Avenir Next", sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(900px 500px at 2% -20%, #d4f3ea 0%, transparent 55%),
+        radial-gradient(900px 500px at 100% 110%, #cfe1ff 0%, transparent 52%),
+        linear-gradient(120deg, #f6fbff 0%, #eef5ff 45%, #f8fbf3 100%);
+      min-height: 100vh;
+      padding: 24px 14px 30px;
+    }
+
+    .app {
+      max-width: 1120px;
+      margin: 0 auto;
+      display: grid;
+      gap: 14px;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      box-shadow: var(--panel-shadow);
+      backdrop-filter: blur(6px);
+      overflow: hidden;
+    }
+
+    .hero {
+      padding: 16px 18px 14px;
+    }
+
+    .hero h1 {
+      margin: 0;
+      font-family: "Fraunces", Georgia, serif;
+      font-size: clamp(1.6rem, 2.6vw, 2.2rem);
+      letter-spacing: 0.01em;
+      line-height: 1.15;
+    }
+
+    .hero p {
+      margin: 8px 0 0;
+      color: var(--muted);
+      font-size: 0.98rem;
+      max-width: 80ch;
+    }
+
+    .layout {
+      display: grid;
+      gap: 14px;
+      grid-template-columns: 320px minmax(0, 1fr);
+    }
+
+    .inputs {
+      padding: 14px;
+      display: grid;
+      gap: 10px;
+      align-content: start;
+    }
+
+    .input-group {
+      background: rgba(255, 255, 255, 0.92);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 10px;
+    }
+
+    .input-group h3 {
+      margin: 0 0 8px;
+      font-size: 0.9rem;
+      color: var(--muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .field {
+      display: grid;
+      gap: 4px;
+      margin-bottom: 8px;
+    }
+
+    .field:last-child {
+      margin-bottom: 0;
+    }
+
+    label {
+      font-size: 0.87rem;
+      color: var(--muted);
+    }
+
+    input {
+      width: 100%;
+      border: 1px solid #cbd8ea;
+      border-radius: 8px;
+      padding: 8px 10px;
+      font-size: 0.95rem;
+      font-family: inherit;
+      color: var(--ink);
+      background: #fff;
+    }
+
+    input:focus {
+      outline: 2px solid #96dde0;
+      border-color: #8ed3d7;
+    }
+
+    .actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 2px;
+    }
+
+    button {
+      border: 0;
+      border-radius: 10px;
+      padding: 9px 12px;
+      font-family: inherit;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    #computeBtn {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    #computeBtn:hover {
+      background: var(--accent-strong);
+    }
+
+    #resetBtn {
+      background: #e9f1ff;
+      color: #234;
+    }
+
+    .viz-wrap {
+      padding: 12px;
+      display: grid;
+      gap: 12px;
+    }
+
+    .system-panel {
+      position: relative;
+      background: linear-gradient(180deg, #fcfeff 0%, #f2f7ff 100%);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 8px;
+    }
+
+    .callout {
+      position: absolute;
+      background: rgba(255, 255, 255, 0.95);
+      border: 1px solid #c6d5ea;
+      border-radius: 10px;
+      padding: 7px 8px;
+      box-shadow: 0 8px 16px rgba(30, 48, 76, 0.1);
+      font-size: 0.82rem;
+      line-height: 1.25;
+    }
+
+    .callout strong {
+      display: block;
+      color: #214;
+      font-size: 0.78rem;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      margin-bottom: 2px;
+    }
+
+    .callout.inner {
+      left: 24px;
+      top: 18px;
+    }
+
+    .callout.outer {
+      right: 18px;
+      top: 16px;
+    }
+
+    .callout.axis {
+      left: 20px;
+      bottom: 16px;
+    }
+
+    .results {
+      background: rgba(255, 255, 255, 0.93);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 10px 12px;
+      font-family: "Menlo", "Consolas", monospace;
+      font-size: 0.9rem;
+      line-height: 1.42;
+      white-space: pre-wrap;
+    }
+
+    .status-ok {
+      color: var(--ok);
+      font-weight: 700;
+    }
+
+    .status-bad {
+      color: var(--danger);
+      font-weight: 700;
+    }
+
+    .plot-card {
+      padding: 12px;
+      background: linear-gradient(160deg, #ffffff 0%, #f9fff7 100%);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+    }
+
+    .plot-card h2 {
+      margin: 0 0 4px;
+      font-family: "Fraunces", Georgia, serif;
+      font-size: 1.2rem;
+    }
+
+    .plot-card p {
+      margin: 0 0 8px;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .plot-card .citation {
+      margin-top: 8px;
+      font-size: 0.86rem;
+    }
+
+    .plot-card a {
+      color: var(--accent-strong);
+      text-decoration-thickness: 0.08em;
+    }
+
+    .timescale-card {
+      padding: 12px;
+      background: linear-gradient(160deg, #fffef8 0%, #f6fbff 100%);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+    }
+
+    .timescale-card h2 {
+      margin: 0 0 4px;
+      font-family: "Fraunces", Georgia, serif;
+      font-size: 1.15rem;
+    }
+
+    .timescale-card p {
+      margin: 0 0 8px;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .timescale-grid {
+      display: grid;
+      gap: 10px;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    }
+
+    .metric {
+      background: rgba(255, 255, 255, 0.92);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 10px;
+    }
+
+    .metric strong {
+      display: block;
+      margin-bottom: 4px;
+      font-size: 0.82rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+    }
+
+    .metric-desc {
+      display: block;
+      font-size: 0.75rem;
+      color: var(--muted);
+      font-weight: 400;
+      margin-bottom: 6px;
+      font-style: italic;
+    }
+
+    .metric span {
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: var(--ink);
+    }
+
+    #stabilityPlot {
+      width: 100%;
+      height: auto;
+      border-radius: 10px;
+      border: 1px solid #d5e1ee;
+      background: #fbfdff;
+      display: block;
+    }
+
+    @media (max-width: 960px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
+
+      .inputs {
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      }
+
+      .actions {
+        grid-column: 1 / -1;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <section class="card hero">
+      <h1>Hierarchical Triple Stability: Visual Calculator</h1>
+      <p>
+        Diagram-driven view of two close-in masses and one distant companion. Enter the inner-binary semi-major axis and the observed present-day outer separation, then inspect the stable region in the a<sub>out</sub>-e<sub>out</sub> plane.
+      </p>
+    </section>
+
+    <section class="layout">
+      <aside class="card inputs">
+        <div class="input-group">
+          <h3>Masses (M_sun)</h3>
+          <div class="field">
+            <label for="m1">Inner body M1</label>
+            <input id="m1" type="number" step="0.001" value="0.626" />
+          </div>
+          <div class="field">
+            <label for="m2">Inner body M2</label>
+            <input id="m2" type="number" step="0.001" value="0.449" />
+          </div>
+          <div class="field">
+            <label for="mout">Distant body M<sub>out</sub></label>
+            <input id="mout" type="number" step="0.001" value="0.565" />
+          </div>
+        </div>
+
+        <div class="input-group">
+          <h3>Geometry</h3>
+          <div class="field">
+            <label for="ain">Inner semi-major axis a<sub>in</sub> (AU)</label>
+            <input id="ain" type="number" step="0.01" value="4.6" />
+          </div>
+          <div class="field">
+            <label for="sepobs">Observed outer separation s<sub>obs</sub> (AU)</label>
+            <input id="sepobs" type="number" step="0.1" value="123.0" />
+          </div>
+        </div>
+
+        <div class="input-group">
+          <h3>Model</h3>
+          <div class="field">
+            <label for="ein">Inner eccentricity e<sub>in</sub></label>
+            <input id="ein" type="number" min="0" max="0.999" step="0.01" value="0.19" />
+          </div>
+          <div class="field">
+            <label for="alpha">alpha</label>
+            <input id="alpha" type="number" step="0.01" value="2.0" />
+          </div>
+          <div class="field">
+            <label for="ctr">C_tr</label>
+            <input id="ctr" type="number" step="0.001" value="0.037" />
+          </div>
+        </div>
+
+        <div class="actions">
+          <button id="computeBtn">Update Diagram + Plot</button>
+          <button id="resetBtn" type="button">Reset Defaults</button>
+        </div>
+      </aside>
+
+      <section class="card viz-wrap">
+        <div class="system-panel">
+          <svg id="systemSvg" viewBox="0 0 760 320" width="100%" role="img" aria-label="Three-body schematic">
+            <defs>
+              <linearGradient id="orbitGrad" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#9fc4ff" stop-opacity="0.95" />
+                <stop offset="100%" stop-color="#59a6a8" stop-opacity="0.9" />
+              </linearGradient>
+              <radialGradient id="starHot" cx="35%" cy="30%" r="70%">
+                <stop offset="0%" stop-color="#fff7da" />
+                <stop offset="100%" stop-color="#e9b860" />
+              </radialGradient>
+              <radialGradient id="starCool" cx="35%" cy="30%" r="70%">
+                <stop offset="0%" stop-color="#edfcff" />
+                <stop offset="100%" stop-color="#7fc3e4" />
+              </radialGradient>
+            </defs>
+
+            <ellipse cx="245" cy="170" rx="82" ry="48" fill="none" stroke="url(#orbitGrad)" stroke-width="2.5" stroke-dasharray="6 5" />
+            <ellipse id="outerOrbit" cx="245" cy="170" rx="300" ry="145" fill="none" stroke="#6c8fbb" stroke-width="2.6" stroke-dasharray="10 8" opacity="0.8" />
+
+            <line x1="245" y1="170" x2="245" y2="36" stroke="#89a4c5" stroke-width="1.4" stroke-dasharray="4 4" />
+            <line x1="245" y1="170" x2="496" y2="170" stroke="#89a4c5" stroke-width="1.4" stroke-dasharray="4 4" />
+
+            <circle id="innerA" cx="182" cy="170" r="15" fill="url(#starHot)" stroke="#8e6330" stroke-width="1.2" />
+            <circle id="innerB" cx="308" cy="170" r="14" fill="url(#starCool)" stroke="#3b7595" stroke-width="1.2" />
+            <circle id="outerBody" cx="496" cy="170" r="18" fill="#9ad0cc" stroke="#2e7270" stroke-width="1.6" />
+
+            <text x="172" y="198" font-size="12" fill="#324f74">M1</text>
+            <text x="299" y="198" font-size="12" fill="#324f74">M2</text>
+            <text x="486" y="198" font-size="12" fill="#324f74">M<tspan baseline-shift="sub" font-size="9">out</tspan></text>
+
+            <text x="202" y="158" font-size="12" fill="#355775">a<tspan baseline-shift="sub" font-size="9">in</tspan></text>
+            <text x="350" y="160" font-size="12" fill="#355775">a<tspan baseline-shift="sub" font-size="9">out</tspan></text>
+          </svg>
+
+          <div class="callout inner" id="calloutInner"></div>
+          <div class="callout outer" id="calloutOuter"></div>
+          <div class="callout axis" id="calloutStatus"></div>
+        </div>
+
+        <div class="results" id="result"></div>
+
+        <div class="plot-card">
+          <h2>Stable Region in a<sub>out</sub> vs e<sub>out</sub></h2>
+          <p>Blue cells satisfy the stability criterion. The gold overlay marks combinations compatible with the observed projected separation, using s<sub>obs</sub> &lt;= a<sub>out</sub> (1 + e<sub>out</sub>).</p>
+          <canvas id="stabilityPlot" width="900" height="340"></canvas>
+          <p class="citation">
+            Criterion reference: <a href="https://ui.adsabs.harvard.edu/abs/2001ASPC..229..101M/abstract" target="_blank" rel="noreferrer">Mardling, R. A. 2001, Stability in the General Three-Body Problem, ASP Conf. Ser. 229, 101 (ADS)</a>.
+          </p>
+        </div>
+
+        <div class="timescale-card">
+          <h2>Kozai-Lidov Timescale</h2>
+          <p>Quadrupole-order estimate along the observed-separation column, using a<sub>out</sub> = s<sub>obs</sub>. The panel shows the effect of the outer eccentricity at e<sub>out</sub> = 0, e<sub>max</sub>/2, and e<sub>max</sub>, and includes the adopted e<sub>in</sub> correction.</p>
+          <div class="timescale-grid" id="klPanel"></div>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <script>
+    const defaults = {
+      m1: 0.626,
+      m2: 0.449,
+      mout: 0.565,
+      ain: 4.6,
+      sepobs: 123.0,
+      ein: 0.19,
+      alpha: 2.0,
+      ctr: 0.037
+    };
+
+    const ids = ["m1", "m2", "mout", "ain", "sepobs", "ein", "alpha", "ctr"];
+
+    function readInputs() {
+      const data = {};
+      for (const id of ids) {
+        data[id] = parseFloat(document.getElementById(id).value);
+      }
+      return data;
+    }
+
+    function rhoOfE(e) {
+      if (!(e >= 0 && e < 1)) {
+        throw new Error("eₒᵤₜ must satisfy 0 <= eₒᵤₜ < 1");
+      }
+      return Math.sqrt(1 + e) / Math.pow(1 - e, 1.5);
+    }
+
+    function eFromRho(target, tol = 1e-10) {
+      if (target < 1) {
+        return null;
+      }
+      let lo = 0;
+      let hi = 1 - 1e-12;
+      for (let i = 0; i < 200; i += 1) {
+        const mid = 0.5 * (lo + hi);
+        if (rhoOfE(mid) < target) {
+          lo = mid;
+        } else {
+          hi = mid;
+        }
+        if (hi - lo < tol) {
+          break;
+        }
+      }
+      return 0.5 * (lo + hi);
+    }
+
+    function rhoLimit(aIn, aOut, mIn, mOut, ctr, alpha) {
+      if ([aIn, aOut, mIn, mOut, ctr, alpha].some((x) => !(x > 0))) {
+        throw new Error("all masses and axes must be positive");
+      }
+      const ratio = aOut / aIn;
+      const mTot = mIn + mOut;
+      const rhs = ctr * Math.pow(mIn / mTot, alpha / 2) * Math.pow(ratio, 1.5 * alpha - 1);
+      return Math.pow(rhs, 1 / alpha);
+    }
+
+    function orbitalPeriodYears(a, totalMass) {
+      return Math.sqrt(Math.pow(a, 3) / totalMass);
+    }
+
+    function kozaiLidovTimescaleYears(aIn, aOut, mIn, mOut, eIn, eOut) {
+      const pIn = orbitalPeriodYears(aIn, mIn);
+      const pOut = orbitalPeriodYears(aOut, mIn + mOut);
+      const prefactor = 8 / (15 * Math.PI);
+      const jIn = Math.sqrt(Math.max(1e-12, 1 - eIn * eIn));
+      return prefactor * ((mIn + mOut) / mOut) * (pOut * pOut / pIn) * Math.pow(1 - eOut * eOut, 1.5) / jIn;
+    }
+
+    function formatYears(years) {
+      if (!(years > 0) || !Number.isFinite(years)) {
+        return "n/a";
+      }
+      if (years >= 1e9) {
+        return `${(years / 1e9).toFixed(2)} Gyr`;
+      }
+      if (years >= 1e6) {
+        return `${(years / 1e6).toFixed(2)} Myr`;
+      }
+      if (years >= 1e3) {
+        return `${(years / 1e3).toFixed(2)} kyr`;
+      }
+      return `${years.toFixed(1)} yr`;
+    }
+
+    function compute(data) {
+      const mIn = data.m1 + data.m2;
+      const limitAtObserved = rhoLimit(data.ain, data.sepobs, mIn, data.mout, data.ctr, data.alpha);
+      const eCritAtObserved = eFromRho(limitAtObserved);
+      const hasStableAtObserved = limitAtObserved >= 1;
+      const tKlAtZero = kozaiLidovTimescaleYears(data.ain, data.sepobs, mIn, data.mout, data.ein, 0);
+      const halfMaxE = hasStableAtObserved ? 0.5 * eCritAtObserved : null;
+      const tKlAtHalfMaxE = hasStableAtObserved
+        ? kozaiLidovTimescaleYears(data.ain, data.sepobs, mIn, data.mout, data.ein, halfMaxE)
+        : null;
+      const tKlAtMaxE = hasStableAtObserved
+        ? kozaiLidovTimescaleYears(data.ain, data.sepobs, mIn, data.mout, data.ein, eCritAtObserved)
+        : null;
+      return {
+        mIn,
+        limitAtObserved,
+        eCritAtObserved,
+        hasStableAtObserved,
+        halfMaxE,
+        tKlAtZero,
+        tKlAtHalfMaxE,
+        tKlAtMaxE
+      };
+    }
+
+    function updateCallouts(data, result) {
+      const inner = document.getElementById("calloutInner");
+      const outer = document.getElementById("calloutOuter");
+      const status = document.getElementById("calloutStatus");
+      inner.innerHTML = `<strong>Inner Pair</strong>M1 = ${data.m1.toFixed(3)}<br>M2 = ${data.m2.toFixed(3)}<br>a<sub>in</sub> = ${data.ain.toFixed(2)} AU<br>e<sub>in</sub> = ${data.ein.toFixed(2)}`;
+      outer.innerHTML = `<strong>Distant Body</strong>M<sub>out</sub> = ${data.mout.toFixed(3)}<br>s<sub>obs</sub> = ${data.sepobs.toFixed(2)} AU`;
+      status.innerHTML = `<strong>At Observed Separation</strong>${result.hasStableAtObserved ? `e<sub>max</sub> = ${result.eCritAtObserved.toFixed(4)}` : "no stable orbit"}<br>x = s<sub>obs</sub>`;
+    }
+
+    function updateSchematicScale(data) {
+      const ratio = Math.max(2.2, data.sepobs / Math.max(data.ain, 1e-6));
+      const norm = Math.min(1, ratio / 18);
+      const outerRx = 240 + 100 * norm;
+      const outerRy = 118 + 52 * norm;
+      const outerCx = 245 + 0.93 * outerRx;
+
+      const outerOrbit = document.getElementById("outerOrbit");
+      const outerBody = document.getElementById("outerBody");
+      outerOrbit.setAttribute("rx", outerRx.toFixed(1));
+      outerOrbit.setAttribute("ry", outerRy.toFixed(1));
+      outerBody.setAttribute("cx", outerCx.toFixed(1));
+    }
+
+    function updateKlPanel(data, result) {
+      const panel = document.getElementById("klPanel");
+      const pIn = orbitalPeriodYears(data.ain, result.mIn);
+      const pOut = orbitalPeriodYears(data.sepobs, result.mIn + data.mout);
+      panel.innerHTML = [
+        `<div class="metric"><strong>Kozai-Lidov Timescale (Circular Outer)</strong><span class="metric-desc">t<sub>KL</sub> for e<sub>out</sub> = 0</span><span>${formatYears(result.tKlAtZero)}</span></div>`,
+        `<div class="metric"><strong>KL Timescale at Half-Max Ecc.</strong><span class="metric-desc">t<sub>KL</sub> for e<sub>out</sub> = e<sub>max</sub>/2</span><span>${result.hasStableAtObserved ? formatYears(result.tKlAtHalfMaxE) : "no stable value"}</span></div>`,
+        `<div class="metric"><strong>KL Timescale at Maximum Ecc.</strong><span class="metric-desc">t<sub>KL</sub> for e<sub>out</sub> = e<sub>max</sub></span><span>${result.hasStableAtObserved ? formatYears(result.tKlAtMaxE) : "no stable value"}</span></div>`,
+        `<div class="metric"><strong>Maximum Stable Outer Ecc.</strong><span class="metric-desc">e<sub>max</sub> at s<sub>obs</sub></span><span>${result.hasStableAtObserved ? result.eCritAtObserved.toFixed(4) : "none"}</span></div>`,
+        `<div class="metric"><strong>Inner Orbital Period</strong><span class="metric-desc">P<sub>in</sub> = 2π√(a<sub>in</sub>³/M<sub>in</sub>)</span><span>${formatYears(pIn)}</span></div>`,
+        `<div class="metric"><strong>Outer Orbital Period</strong><span class="metric-desc">P<sub>out</sub> = 2π√(s<sub>obs</sub>³/M<sub>tot</sub>)</span><span>${formatYears(pOut)}</span></div>`,
+        `<div class="metric"><strong>Inner Binary Eccentricity</strong><span class="metric-desc">Adopted e<sub>in</sub> for KL estimate</span><span>${data.ein.toFixed(2)}</span></div>`
+      ].join("");
+    }
+
+    function niceTickStep(span, targetTicks = 7) {
+      const rough = span / targetTicks;
+      const power = Math.pow(10, Math.floor(Math.log10(rough)));
+      const norm = rough / power;
+      if (norm <= 1) {
+        return power;
+      }
+      if (norm <= 2) {
+        return 2 * power;
+      }
+      if (norm <= 5) {
+        return 5 * power;
+      }
+      return 10 * power;
+    }
+
+    function drawPlot(data, result) {
+      const canvas = document.getElementById("stabilityPlot");
+      const ctx = canvas.getContext("2d");
+      const w = canvas.width;
+      const h = canvas.height;
+      const padL = 62;
+      const padR = 24;
+      const padT = 22;
+      const padB = 44;
+      const plotW = w - padL - padR;
+      const plotH = h - padT - padB;
+
+      const minA = Math.max(data.ain * 1.5, 2);
+      const maxA = Math.max(data.sepobs * 2.4, minA + 20);
+      const xSteps = 180;
+      const ySteps = 120;
+
+      const yMin = 0;
+      const yMax = 1;
+
+      const xToPx = (x) => padL + ((x - minA) / (maxA - minA)) * plotW;
+      const yToPx = (y) => padT + (1 - (y - yMin) / (yMax - yMin)) * plotH;
+      const xTickStep = niceTickStep(maxA - minA);
+      const xTickStart = Math.ceil(minA / xTickStep) * xTickStep;
+
+      ctx.clearRect(0, 0, w, h);
+      ctx.fillStyle = "#fbfdff";
+      ctx.fillRect(0, 0, w, h);
+
+      for (let ix = 0; ix < xSteps; ix += 1) {
+        const a0 = minA + (ix / xSteps) * (maxA - minA);
+        const a1 = minA + ((ix + 1) / xSteps) * (maxA - minA);
+        const x0 = xToPx(a0);
+        const x1 = xToPx(a1);
+        for (let iy = 0; iy < ySteps; iy += 1) {
+          const e0 = yMin + (iy / ySteps) * (yMax - yMin);
+          const e1 = yMin + ((iy + 1) / ySteps) * (yMax - yMin);
+          const midE = 0.5 * (e0 + e1);
+          const limit = rhoLimit(data.ain, 0.5 * (a0 + a1), data.m1 + data.m2, data.mout, data.ctr, data.alpha);
+          const stable = limit >= 1 && rhoOfE(midE) <= limit;
+          const compatible = data.sepobs <= 0.5 * (a0 + a1) * (1 + midE);
+          const yTop = yToPx(e1);
+          const yBottom = yToPx(e0);
+
+          if (stable) {
+            ctx.fillStyle = compatible ? "rgba(237, 185, 74, 0.65)" : "rgba(59, 130, 246, 0.34)";
+            ctx.fillRect(x0, yTop, x1 - x0 + 1, yBottom - yTop + 1);
+          } else if (compatible) {
+            ctx.fillStyle = "rgba(250, 204, 21, 0.12)";
+            ctx.fillRect(x0, yTop, x1 - x0 + 1, yBottom - yTop + 1);
+          }
+        }
+      }
+
+      ctx.strokeStyle = "#d8e2ee";
+      ctx.lineWidth = 1;
+      for (let i = 0; i <= 5; i += 1) {
+        const y = yMin + (i / 5) * (yMax - yMin);
+        const py = yToPx(y);
+        ctx.beginPath();
+        ctx.moveTo(padL, py);
+        ctx.lineTo(w - padR, py);
+        ctx.stroke();
+      }
+
+      ctx.font = '12px "Space Grotesk", sans-serif';
+      ctx.fillStyle = "#213b58";
+      for (let tick = xTickStart; tick <= maxA + 0.5 * xTickStep; tick += xTickStep) {
+        const px = xToPx(tick);
+        if (px < padL || px > w - padR) {
+          continue;
+        }
+        ctx.beginPath();
+        ctx.strokeStyle = "#dde6f2";
+        ctx.moveTo(px, padT);
+        ctx.lineTo(px, h - padB);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.strokeStyle = "#183252";
+        ctx.moveTo(px, h - padB);
+        ctx.lineTo(px, h - padB + 6);
+        ctx.stroke();
+        ctx.fillText(String(Math.round(tick)), px - 10, h - padB + 18);
+      }
+
+      ctx.beginPath();
+      ctx.strokeStyle = "#183252";
+      ctx.lineWidth = 1.4;
+      ctx.moveTo(padL, padT);
+      ctx.lineTo(padL, h - padB);
+      ctx.lineTo(w - padR, h - padB);
+      ctx.stroke();
+
+      const markerX = xToPx(data.sepobs);
+      const markerY = yToPx(result.hasStableAtObserved ? result.eCritAtObserved : 0);
+
+      const sepBoundaryA0 = Math.max(minA, data.sepobs / 2);
+      ctx.beginPath();
+      ctx.strokeStyle = "#b7791f";
+      ctx.lineWidth = 2;
+      for (let i = 0; i <= 160; i += 1) {
+        const a = sepBoundaryA0 + (i / 160) * (maxA - sepBoundaryA0);
+        const e = Math.max(0, data.sepobs / a - 1);
+        const px = xToPx(a);
+        const py = yToPx(Math.min(1, e));
+        if (i === 0) {
+          ctx.moveTo(px, py);
+        } else {
+          ctx.lineTo(px, py);
+        }
+      }
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.strokeStyle = "#0f7c7d";
+      ctx.lineWidth = 2.4;
+      let started = false;
+      for (let i = 0; i <= 180; i += 1) {
+        const a = minA + (i / 180) * (maxA - minA);
+        const limit = rhoLimit(data.ain, a, data.m1 + data.m2, data.mout, data.ctr, data.alpha);
+        const eCrit = eFromRho(limit);
+        if (eCrit === null) {
+          started = false;
+          continue;
+        }
+        const px = xToPx(a);
+        const py = yToPx(Math.min(0.999, eCrit));
+        if (!started) {
+          ctx.moveTo(px, py);
+          started = true;
+        } else {
+          ctx.lineTo(px, py);
+        }
+      }
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.strokeStyle = "#54759a";
+      ctx.setLineDash([6, 5]);
+      ctx.moveTo(markerX, padT);
+      ctx.lineTo(markerX, h - padB);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      if (result.hasStableAtObserved) {
+        ctx.beginPath();
+        ctx.strokeStyle = "#54759a";
+        ctx.setLineDash([6, 5]);
+        ctx.lineWidth = 1.8;
+        ctx.moveTo(padL, markerY);
+        ctx.lineTo(markerX, markerY);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        ctx.beginPath();
+        ctx.fillStyle = "#05595a";
+        ctx.arc(markerX, markerY, 5, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      ctx.fillStyle = "#38506d";
+      ctx.font = '13px "Space Grotesk", sans-serif';
+      ctx.fillText("aₒᵤₜ (AU)", w * 0.5 - 24, h - 12);
+      ctx.save();
+      ctx.translate(8, h * 0.5 + 26);
+      ctx.rotate(-Math.PI / 2);
+      ctx.fillText("outer eccentricity", 0, 0);
+      ctx.restore();
+
+      ctx.fillStyle = "#213b58";
+      ctx.font = '12px "Space Grotesk", sans-serif';
+      ctx.fillText("0.0", padL - 30, h - padB + 4);
+      ctx.fillText("1.0 (max)", padL - 45, padT + 4);
+      
+      if (result.hasStableAtObserved) {
+        ctx.beginPath();
+        ctx.strokeStyle = "#54759a";
+        ctx.lineWidth = 1.2;
+        ctx.moveTo(padL - 6, markerY);
+        ctx.lineTo(padL, markerY);
+        ctx.stroke();
+        ctx.fillStyle = "#54759a";
+        ctx.font = 'bold 11px "Space Grotesk", sans-serif';
+        ctx.fillText(result.eCritAtObserved.toFixed(3), padL - 50, markerY + 4);
+      }
+
+      ctx.fillStyle = "#2a4a6f";
+      ctx.fillStyle = "rgba(59, 130, 246, 0.72)";
+      ctx.fillRect(padL + 8, padT + 6, 16, 10);
+      ctx.fillStyle = "#2a4a6f";
+      ctx.fillText("stable region", padL + 30, padT + 14);
+      ctx.fillStyle = "rgba(237, 185, 74, 0.8)";
+      ctx.fillRect(padL + 8, padT + 24, 16, 10);
+      ctx.fillStyle = "#2a4a6f";
+      ctx.fillText("stable + separation compatible", padL + 30, padT + 32);
+      ctx.strokeStyle = "#b7791f";
+      ctx.beginPath();
+      ctx.moveTo(padL + 8, padT + 48);
+      ctx.lineTo(padL + 24, padT + 48);
+      ctx.stroke();
+      ctx.fillStyle = "#2a4a6f";
+      ctx.fillText("sₒᵦₛ = aₒᵤₜ (1 + eₒᵤₜ)", padL + 30, padT + 52);
+      ctx.strokeStyle = "#0f7c7d";
+      ctx.beginPath();
+      ctx.moveTo(padL + 8, padT + 66);
+      ctx.lineTo(padL + 24, padT + 66);
+      ctx.stroke();
+      ctx.fillText("stability boundary", padL + 30, padT + 70);
+      ctx.strokeStyle = "#54759a";
+      ctx.setLineDash([6, 5]);
+      ctx.beginPath();
+      ctx.moveTo(padL + 8, padT + 84);
+      ctx.lineTo(padL + 24, padT + 84);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillText("observed separation line", padL + 30, padT + 88);
+    }
+
+    function updateResultText(data, result) {
+      const statusClass = result.hasStableAtObserved ? "status-ok" : "status-bad";
+      const statusText = result.hasStableAtObserved ? "STABLE SOLUTIONS EXIST" : "NO STABLE SOLUTION AT sₒᵦₛ";
+      const resultEl = document.getElementById("result");
+      resultEl.innerHTML = [
+        `mᵢₙ (mass of inner binary) = ${result.mIn.toFixed(3)} M_sun`,
+        ``,
+        `ρ_limit (threshold)       = ${result.limitAtObserved.toFixed(6)}`,
+        `  → From Mardling criterion: a_out/a_in = C_tr · ρ(e_out)^(-α) · (Ω_in/Ω_out)^α`,
+        `  → Stability requires: ρ(e_out) ≤ ρ_limit`,
+        ``,
+        `ρ(e)                   = √(1+e) / (1−e)^(3/2)  [Mardling stability function]`,
+        `e_max (critical ecc.)  = ${result.hasStableAtObserved ? result.eCritAtObserved.toFixed(6) : "no solution (ρ_limit < 1)"}`,
+        `  → At e_max, ρ(e_max) = ρ_limit (stability boundary)`,
+        ``,
+        `<span class="${statusClass}">status                 = ${statusText}</span>`,
+        "",
+        result.hasStableAtObserved
+          ? "✓ The dashed horizontal line at e=e_max shows the maximum allowed eccentricity along s_obs. Stable orbits lie in the blue region below this line."
+          : "✗ ρ_limit < 1 means no outer orbit can exist at s_obs while remaining in hierarchical equilibrium. The outer companion is too close or the inner binary is too massive."
+      ].join("\n");
+    }
+
+    function updateAll() {
+      try {
+        const data = readInputs();
+        const result = compute(data);
+        updateSchematicScale(data);
+        updateCallouts(data, result);
+        updateResultText(data, result);
+        drawPlot(data, result);
+        updateKlPanel(data, result);
+      } catch (err) {
+        document.getElementById("result").textContent = `Error: ${err.message}`;
+      }
+    }
+
+    function resetDefaults() {
+      for (const [key, value] of Object.entries(defaults)) {
+        document.getElementById(key).value = value;
+      }
+      updateAll();
+    }
+
+    document.getElementById("computeBtn").addEventListener("click", updateAll);
+    document.getElementById("resetBtn").addEventListener("click", resetDefaults);
+    ids.forEach((id) => {
+      document.getElementById(id).addEventListener("input", updateAll);
+    });
+
+    updateAll();
+  </script>
+</body>
+</html>
