@@ -279,6 +279,66 @@
       font-size: 0.9rem;
     }
 
+    .explain-card {
+      padding: 12px;
+      background: linear-gradient(160deg, #fefeff 0%, #f4fbff 100%);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+    }
+
+    .explain-card h2 {
+      margin: 0 0 6px;
+      font-family: "Fraunces", Georgia, serif;
+      font-size: 1.15rem;
+    }
+
+    .explain-card p {
+      margin: 0 0 8px;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .explain-text {
+      background: rgba(255, 255, 255, 0.92);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 10px;
+      margin-bottom: 10px;
+      font-size: 0.9rem;
+      line-height: 1.45;
+      color: #1f3653;
+    }
+
+    .explain-grid {
+      display: grid;
+      gap: 10px;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    }
+
+    .explain-step {
+      background: rgba(255, 255, 255, 0.94);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 10px;
+    }
+
+    .explain-step strong {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 0.82rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+    }
+
+    .explain-step .eq {
+      font-family: "Menlo", "Consolas", monospace;
+      font-size: 0.84rem;
+      line-height: 1.45;
+      color: var(--ink);
+      white-space: normal;
+    }
+
     .timescale-grid {
       display: grid;
       gap: 10px;
@@ -425,9 +485,9 @@
             <line x1="245" y1="170" x2="245" y2="36" stroke="#89a4c5" stroke-width="1.4" stroke-dasharray="4 4" />
             <line x1="245" y1="170" x2="496" y2="170" stroke="#89a4c5" stroke-width="1.4" stroke-dasharray="4 4" />
 
-            <circle id="innerA" cx="182" cy="170" r="15" fill="url(#starHot)" stroke="#8e6330" stroke-width="1.2" />
-            <circle id="innerB" cx="308" cy="170" r="14" fill="url(#starCool)" stroke="#3b7595" stroke-width="1.2" />
-            <circle id="outerBody" cx="496" cy="170" r="18" fill="#9ad0cc" stroke="#2e7270" stroke-width="1.6" />
+            <circle id="innerA" cx="163" cy="170" r="15" fill="url(#starHot)" stroke="#8e6330" stroke-width="1.2" />
+            <circle id="innerB" cx="327" cy="170" r="14" fill="url(#starCool)" stroke="#3b7595" stroke-width="1.2" />
+            <circle id="outerBody" cx="545" cy="170" r="18" fill="#9ad0cc" stroke="#2e7270" stroke-width="1.6" />
 
             <text x="172" y="198" font-size="12" fill="#324f74">M1</text>
             <text x="299" y="198" font-size="12" fill="#324f74">M2</text>
@@ -446,7 +506,7 @@
 
         <div class="plot-card">
           <h2>Stable Region in a<sub>out</sub> vs e<sub>out</sub></h2>
-          <p>Blue cells satisfy the stability criterion. The gold overlay marks combinations compatible with the observed projected separation, using s<sub>obs</sub> &lt;= a<sub>out</sub> (1 + e<sub>out</sub>).</p>
+          <p>Patterned cells satisfy the stability criterion (///) and observed-separation compatibility (\\\). Cross-hatched regions show where both conditions overlap, using s<sub>obs</sub> &lt;= a<sub>out</sub> (1 + e<sub>out</sub>).</p>
           <canvas id="stabilityPlot" width="900" height="340"></canvas>
           <p class="citation">
             Criterion reference: <a href="https://ui.adsabs.harvard.edu/abs/2001ASPC..229..101M/abstract" target="_blank" rel="noreferrer">Mardling, R. A. 2001, Stability in the General Three-Body Problem, ASP Conf. Ser. 229, 101 (ADS)</a>.
@@ -457,6 +517,13 @@
           <h2>Kozai-Lidov Timescale</h2>
           <p>Quadrupole-order estimate along the observed-separation column, using a<sub>out</sub> = s<sub>obs</sub>. The panel shows the effect of the outer eccentricity at e<sub>out</sub> = 0, e<sub>max</sub>/2, and e<sub>max</sub>, and includes the adopted e<sub>in</sub> correction.</p>
           <div class="timescale-grid" id="klPanel"></div>
+        </div>
+
+        <div class="explain-card">
+          <h2>Computation Logic (Step by Step)</h2>
+          <p>This panel expands the arithmetic used by the code for the current inputs and explains how the plotted boundaries and printed outputs are obtained.</p>
+          <div class="explain-text" id="mathExplainText"></div>
+          <div class="explain-grid" id="mathExplain"></div>
         </div>
       </section>
     </section>
@@ -475,6 +542,48 @@
     };
 
     const ids = ["m1", "m2", "mout", "ain", "sepobs", "ein", "alpha", "ctr"];
+
+    function createHatchPattern(ctx, direction, strokeStyle) {
+      const tile = document.createElement("canvas");
+      tile.width = 12;
+      tile.height = 12;
+      const tctx = tile.getContext("2d");
+      tctx.clearRect(0, 0, tile.width, tile.height);
+      tctx.strokeStyle = strokeStyle;
+      tctx.lineWidth = 1.1;
+
+      if (direction === "forward") {
+        // /// hatch
+        tctx.beginPath();
+        tctx.moveTo(-2, 12);
+        tctx.lineTo(12, -2);
+        tctx.moveTo(2, 14);
+        tctx.lineTo(14, 2);
+        tctx.stroke();
+      } else if (direction === "backward") {
+        // \\\ hatch
+        tctx.beginPath();
+        tctx.moveTo(-2, -2);
+        tctx.lineTo(12, 12);
+        tctx.moveTo(2, -4);
+        tctx.lineTo(14, 8);
+        tctx.stroke();
+      } else if (direction === "cross") {
+        // Combined hatch for overlap visibility
+        tctx.beginPath();
+        tctx.moveTo(-2, 12);
+        tctx.lineTo(12, -2);
+        tctx.moveTo(2, 14);
+        tctx.lineTo(14, 2);
+        tctx.moveTo(-2, -2);
+        tctx.lineTo(12, 12);
+        tctx.moveTo(2, -4);
+        tctx.lineTo(14, 8);
+        tctx.stroke();
+      }
+
+      return ctx.createPattern(tile, "repeat");
+    }
 
     function readInputs() {
       const data = {};
@@ -549,6 +658,13 @@
       return `${years.toFixed(1)} yr`;
     }
 
+    function f6(x) {
+      if (!Number.isFinite(x)) {
+        return "n/a";
+      }
+      return x.toFixed(6);
+    }
+
     function compute(data) {
       const mIn = data.m1 + data.m2;
       const limitAtObserved = rhoLimit(data.ain, data.sepobs, mIn, data.mout, data.ctr, data.alpha);
@@ -588,7 +704,7 @@
       const norm = Math.min(1, ratio / 18);
       const outerRx = 240 + 100 * norm;
       const outerRy = 118 + 52 * norm;
-      const outerCx = 245 + 0.93 * outerRx;
+      const outerCx = 245 + outerRx;
 
       const outerOrbit = document.getElementById("outerOrbit");
       const outerBody = document.getElementById("outerBody");
@@ -609,6 +725,35 @@
         `<div class="metric"><strong>Inner Orbital Period</strong><span class="metric-desc">P<sub>in</sub> = 2π√(a<sub>in</sub>³/M<sub>in</sub>)</span><span>${formatYears(pIn)}</span></div>`,
         `<div class="metric"><strong>Outer Orbital Period</strong><span class="metric-desc">P<sub>out</sub> = 2π√(s<sub>obs</sub>³/M<sub>tot</sub>)</span><span>${formatYears(pOut)}</span></div>`,
         `<div class="metric"><strong>Inner Binary Eccentricity</strong><span class="metric-desc">Adopted e<sub>in</sub> for KL estimate</span><span>${data.ein.toFixed(2)}</span></div>`
+      ].join("");
+    }
+
+    function updateMathExplanation(data, result) {
+      const panel = document.getElementById("mathExplain");
+      const text = document.getElementById("mathExplainText");
+      const mIn = result.mIn;
+      const mTot = mIn + data.mout;
+      const ratio = data.sepobs / data.ain;
+      const massFactor = Math.pow(mIn / mTot, data.alpha / 2);
+      const ratioExponent = 1.5 * data.alpha - 1;
+      const ratioFactor = Math.pow(ratio, ratioExponent);
+      const rhs = data.ctr * massFactor * ratioFactor;
+      const rhoTrialAtHalf = result.hasStableAtObserved ? rhoOfE(result.halfMaxE) : null;
+      const pIn = orbitalPeriodYears(data.ain, mIn);
+      const pOut = orbitalPeriodYears(data.sepobs, mTot);
+      const jIn = Math.sqrt(Math.max(1e-12, 1 - data.ein * data.ein));
+
+      text.innerHTML = result.hasStableAtObserved
+        ? `The code first combines the two inner masses into M<sub>in</sub>, then evaluates the Mardling-style stability threshold ρ<sub>limit</sub> at the observed separation s<sub>obs</sub>. It then inverts ρ(e) numerically to get e<sub>max</sub>, the largest outer eccentricity that still satisfies stability at this separation. In the 2D map, each grid cell is tested against two conditions: dynamical stability and projected-separation compatibility. The hatch style tells you which condition is met, and cross-hatching marks overlap. Finally, the Kozai-Lidov panel uses the same masses and separations to compute timescales at e<sub>out</sub>=0, e<sub>max</sub>/2, and e<sub>max</sub>. For the current inputs, stable solutions exist because ρ<sub>limit</sub> = ${f6(result.limitAtObserved)} is above 1.`
+        : `The code first combines the two inner masses into M<sub>in</sub>, then evaluates the Mardling-style stability threshold ρ<sub>limit</sub> at the observed separation s<sub>obs</sub>. It then checks whether any outer eccentricity can satisfy ρ(e) ≤ ρ<sub>limit</sub>. When ρ<sub>limit</sub> is below 1, no value in 0 ≤ e &lt; 1 can pass the criterion at this separation, so e<sub>max</sub> does not exist here. In the 2D map, each grid cell is still tested against both stability and separation-compatibility conditions, which shows where solutions would be possible if the geometry were different. For the current inputs, no stable solution exists at s<sub>obs</sub> because ρ<sub>limit</sub> = ${f6(result.limitAtObserved)} is below 1.`;
+
+      panel.innerHTML = [
+        `<div class="explain-step"><strong>1) Build Inner/Total Masses</strong><div class="eq">M<sub>in</sub> = M1 + M2 = ${f6(data.m1)} + ${f6(data.m2)} = ${f6(mIn)}<br>M<sub>tot</sub> = M<sub>in</sub> + M<sub>out</sub> = ${f6(mIn)} + ${f6(data.mout)} = ${f6(mTot)}</div></div>`,
+        `<div class="explain-step"><strong>2) Compute ρ<sub>limit</sub> at s<sub>obs</sub></strong><div class="eq">r = a<sub>out</sub>/a<sub>in</sub> = ${f6(data.sepobs)}/${f6(data.ain)} = ${f6(ratio)}<br>ρ<sub>limit</sub><sup>α</sup> = C<sub>tr</sub> · (M<sub>in</sub>/M<sub>tot</sub>)<sup>α/2</sup> · r<sup>(3α/2 - 1)</sup><br>= ${f6(data.ctr)} · ${f6(massFactor)} · ${f6(ratioFactor)} = ${f6(rhs)}<br>ρ<sub>limit</sub> = ${f6(rhs)}<sup>1/${f6(data.alpha)}</sup> = ${f6(result.limitAtObserved)}</div></div>`,
+        `<div class="explain-step"><strong>3) Convert ρ ↔ e</strong><div class="eq">ρ(e) = √(1+e) / (1−e)<sup>3/2</sup><br>At the boundary, solve ρ(e<sub>max</sub>) = ρ<sub>limit</sub> with bisection in 0 ≤ e &lt; 1.<br>Result: e<sub>max</sub> = ${result.hasStableAtObserved ? f6(result.eCritAtObserved) : "no solution"}${result.hasStableAtObserved ? `<br>Check at e<sub>max</sub>/2: ρ(${f6(result.halfMaxE)}) = ${f6(rhoTrialAtHalf)}` : ""}</div></div>`,
+        `<div class="explain-step"><strong>4) Plot Logic in a<sub>out</sub>-e<sub>out</sub> Plane</strong><div class="eq">For each cell center (a, e):<br>stable if ρ(e) ≤ ρ<sub>limit</sub>(a)<br>separation-compatible if s<sub>obs</sub> ≤ a(1+e)<br>/// hatch = stable only<br>\\\ hatch = separation-compatible only<br>cross-hatch = both (overlap)</div></div>`,
+        `<div class="explain-step"><strong>5) KL Timescale Arithmetic</strong><div class="eq">P<sub>in</sub> = √(a<sub>in</sub><sup>3</sup>/M<sub>in</sub>) = ${f6(pIn)} yr<br>P<sub>out</sub> = √(s<sub>obs</sub><sup>3</sup>/M<sub>tot</sub>) = ${f6(pOut)} yr<br>j<sub>in</sub> = √(1−e<sub>in</sub><sup>2</sup>) = ${f6(jIn)}<br>t<sub>KL</sub> = (8/(15π)) · (M<sub>tot</sub>/M<sub>out</sub>) · (P<sub>out</sub><sup>2</sup>/P<sub>in</sub>) · (1−e<sub>out</sub><sup>2</sup>)<sup>3/2</sup> / j<sub>in</sub></div></div>`,
+        `<div class="explain-step"><strong>6) Final Status</strong><div class="eq">If ρ<sub>limit</sub> ≥ 1, a stable outer eccentricity interval exists and the app reports e<sub>max</sub>.<br>If ρ<sub>limit</sub> &lt; 1, no e in [0,1) can satisfy stability at s<sub>obs</sub>.</div></div>`
       ].join("");
     }
 
@@ -652,6 +797,9 @@
       const yToPx = (y) => padT + (1 - (y - yMin) / (yMax - yMin)) * plotH;
       const xTickStep = niceTickStep(maxA - minA);
       const xTickStart = Math.ceil(minA / xTickStep) * xTickStep;
+      const stablePattern = createHatchPattern(ctx, "forward", "rgba(16, 76, 148, 0.78)");
+      const compatiblePattern = createHatchPattern(ctx, "backward", "rgba(132, 90, 16, 0.78)");
+      const overlapPattern = createHatchPattern(ctx, "cross", "rgba(52, 58, 76, 0.85)");
 
       ctx.clearRect(0, 0, w, h);
       ctx.fillStyle = "#fbfdff";
@@ -672,11 +820,20 @@
           const yTop = yToPx(e1);
           const yBottom = yToPx(e0);
 
-          if (stable) {
-            ctx.fillStyle = compatible ? "rgba(237, 185, 74, 0.65)" : "rgba(59, 130, 246, 0.34)";
-            ctx.fillRect(x0, yTop, x1 - x0 + 1, yBottom - yTop + 1);
-          } else if (compatible) {
-            ctx.fillStyle = "rgba(250, 204, 21, 0.12)";
+          if (stable || compatible) {
+            if (stable && compatible) {
+              ctx.fillStyle = "rgba(228, 232, 238, 0.9)";
+              ctx.fillRect(x0, yTop, x1 - x0 + 1, yBottom - yTop + 1);
+              ctx.fillStyle = overlapPattern;
+            } else if (stable) {
+              ctx.fillStyle = "rgba(228, 238, 250, 0.95)";
+              ctx.fillRect(x0, yTop, x1 - x0 + 1, yBottom - yTop + 1);
+              ctx.fillStyle = stablePattern;
+            } else {
+              ctx.fillStyle = "rgba(250, 240, 220, 0.9)";
+              ctx.fillRect(x0, yTop, x1 - x0 + 1, yBottom - yTop + 1);
+              ctx.fillStyle = compatiblePattern;
+            }
             ctx.fillRect(x0, yTop, x1 - x0 + 1, yBottom - yTop + 1);
           }
         }
@@ -814,36 +971,45 @@
         ctx.fillText(result.eCritAtObserved.toFixed(3), padL - 50, markerY + 4);
       }
 
-      ctx.fillStyle = "#2a4a6f";
-      ctx.fillStyle = "rgba(59, 130, 246, 0.72)";
+      ctx.fillStyle = "rgba(228, 238, 250, 0.95)";
+      ctx.fillRect(padL + 8, padT + 6, 16, 10);
+      ctx.fillStyle = stablePattern;
       ctx.fillRect(padL + 8, padT + 6, 16, 10);
       ctx.fillStyle = "#2a4a6f";
       ctx.fillText("stable region", padL + 30, padT + 14);
-      ctx.fillStyle = "rgba(237, 185, 74, 0.8)";
+      ctx.fillStyle = "rgba(250, 240, 220, 0.9)";
+      ctx.fillRect(padL + 8, padT + 24, 16, 10);
+      ctx.fillStyle = compatiblePattern;
       ctx.fillRect(padL + 8, padT + 24, 16, 10);
       ctx.fillStyle = "#2a4a6f";
-      ctx.fillText("stable + separation compatible", padL + 30, padT + 32);
+      ctx.fillText("separation compatible", padL + 30, padT + 32);
+      ctx.fillStyle = "rgba(228, 232, 238, 0.9)";
+      ctx.fillRect(padL + 8, padT + 40, 16, 10);
+      ctx.fillStyle = overlapPattern;
+      ctx.fillRect(padL + 8, padT + 40, 16, 10);
+      ctx.fillStyle = "#2a4a6f";
+      ctx.fillText("overlap (cross-hatched)", padL + 30, padT + 48);
       ctx.strokeStyle = "#b7791f";
       ctx.beginPath();
-      ctx.moveTo(padL + 8, padT + 48);
-      ctx.lineTo(padL + 24, padT + 48);
+      ctx.moveTo(padL + 8, padT + 64);
+      ctx.lineTo(padL + 24, padT + 64);
       ctx.stroke();
       ctx.fillStyle = "#2a4a6f";
-      ctx.fillText("sₒᵦₛ = aₒᵤₜ (1 + eₒᵤₜ)", padL + 30, padT + 52);
+      ctx.fillText("sₒᵦₛ = aₒᵤₜ (1 + eₒᵤₜ)", padL + 30, padT + 68);
       ctx.strokeStyle = "#0f7c7d";
       ctx.beginPath();
-      ctx.moveTo(padL + 8, padT + 66);
-      ctx.lineTo(padL + 24, padT + 66);
+      ctx.moveTo(padL + 8, padT + 82);
+      ctx.lineTo(padL + 24, padT + 82);
       ctx.stroke();
-      ctx.fillText("stability boundary", padL + 30, padT + 70);
+      ctx.fillText("stability boundary", padL + 30, padT + 86);
       ctx.strokeStyle = "#54759a";
       ctx.setLineDash([6, 5]);
       ctx.beginPath();
-      ctx.moveTo(padL + 8, padT + 84);
-      ctx.lineTo(padL + 24, padT + 84);
+      ctx.moveTo(padL + 8, padT + 100);
+      ctx.lineTo(padL + 24, padT + 100);
       ctx.stroke();
       ctx.setLineDash([]);
-      ctx.fillText("observed separation line", padL + 30, padT + 88);
+      ctx.fillText("observed separation line", padL + 30, padT + 104);
     }
 
     function updateResultText(data, result) {
@@ -854,18 +1020,18 @@
         `mᵢₙ (mass of inner binary) = ${result.mIn.toFixed(3)} M_sun`,
         ``,
         `ρ_limit (threshold)       = ${result.limitAtObserved.toFixed(6)}`,
-        `  → From Mardling criterion: a_out/a_in = C_tr · ρ(e_out)^(-α) · (Ω_in/Ω_out)^α`,
-        `  → Stability requires: ρ(e_out) ≤ ρ_limit`,
+        `  → From Mardling criterion: a<sub>out</sub>/a<sub>in</sub> = C<sub>tr</sub> · ρ(e<sub>out</sub>)<sup>-α</sup> · (Ω<sub>in</sub>/Ω<sub>out</sub>)<sup>α</sup>`,
+        `  → Stability requires: ρ(e<sub>out</sub>) ≤ ρ<sub>limit</sub>`,
         ``,
-        `ρ(e)                   = √(1+e) / (1−e)^(3/2)  [Mardling stability function]`,
-        `e_max (critical ecc.)  = ${result.hasStableAtObserved ? result.eCritAtObserved.toFixed(6) : "no solution (ρ_limit < 1)"}`,
-        `  → At e_max, ρ(e_max) = ρ_limit (stability boundary)`,
+        `ρ(e)                   = √(1+e) / (1−e)<sup>3/2</sup>  [Keplerian pericentre/mean-motion factor]`,
+        `e<sub>max</sub> (critical ecc.)  = ${result.hasStableAtObserved ? result.eCritAtObserved.toFixed(6) : "no solution (ρ<sub>limit</sub> < 1)"}`,
+        `  → At e<sub>max</sub>, ρ(e<sub>max</sub>) = ρ<sub>limit</sub> (stability boundary)`,
         ``,
         `<span class="${statusClass}">status                 = ${statusText}</span>`,
         "",
         result.hasStableAtObserved
-          ? "✓ The dashed horizontal line at e=e_max shows the maximum allowed eccentricity along s_obs. Stable orbits lie in the blue region below this line."
-          : "✗ ρ_limit < 1 means no outer orbit can exist at s_obs while remaining in hierarchical equilibrium. The outer companion is too close or the inner binary is too massive."
+          ? "✓ The dashed horizontal line at e=e<sub>max</sub> shows the maximum allowed eccentricity along s<sub>obs</sub>. Stable orbits lie in the ///-hatched region below this line."
+          : "✗ ρ<sub>limit</sub> < 1 means no outer orbit can exist at s<sub>obs</sub> while remaining in hierarchical equilibrium. The outer companion is too close or the inner binary is too massive."
       ].join("\n");
     }
 
@@ -878,6 +1044,7 @@
         updateResultText(data, result);
         drawPlot(data, result);
         updateKlPanel(data, result);
+        updateMathExplanation(data, result);
       } catch (err) {
         document.getElementById("result").textContent = `Error: ${err.message}`;
       }
