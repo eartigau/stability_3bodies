@@ -32,14 +32,70 @@
         radial-gradient(1200px 600px at 8% 0%, #14325f 0%, #08111f 45%),
         linear-gradient(160deg, #0a1424 0%, #111f36 100%);
       min-height: 100vh;
-      padding: 24px 14px 30px;
     }
+
+    .topbar {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(8, 17, 31, .92);
+      backdrop-filter: blur(8px);
+      padding: 0 20px;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 10px;
+      height: 49px;
+      border-bottom: 1px solid rgba(200, 220, 255, 0.16);
+    }
+    .home-pill {
+      display: inline-block;
+      font-size: .78rem;
+      font-weight: 700;
+      color: rgba(232, 238, 248, .85);
+      text-decoration: none;
+      padding: 6px 14px;
+      border-radius: 999px;
+      border: 1px solid rgba(232, 238, 248, .25);
+      background: rgba(255, 255, 255, .06);
+    }
+    .home-pill:hover { color: #fff; border-color: rgba(255,255,255,.5); }
+
+    .shell {
+      display: grid;
+      grid-template-columns: 230px 1fr;
+      min-height: calc(100vh - 49px);
+    }
+    .sidebar {
+      position: sticky;
+      top: 49px;
+      height: calc(100vh - 49px);
+      overflow-y: auto;
+      background: rgba(0, 0, 0, .15);
+      border-right: 1px solid rgba(200, 220, 255, 0.16);
+      padding: 1.6rem 1.1rem;
+      display: flex;
+      flex-direction: column;
+      gap: .3rem;
+      color: #e8eef8;
+    }
+    .sidebar-logo { font-size: .95rem; font-weight: 700; margin-bottom: .15rem; }
+    .sidebar-sub { font-size: .76rem; color: #a8b4ca; margin-bottom: .9rem; line-height: 1.4; }
+    .nav-link {
+      display: block; font-size: .83rem; color: #a8b4ca;
+      padding: .28rem .5rem; border-radius: 6px; text-decoration: none;
+    }
+    .nav-link:hover { background: rgba(255,255,255,.06); color: #e8eef8; }
 
     .app {
       max-width: 1120px;
       margin: 0 auto;
+      padding: 24px 14px 30px;
       display: grid;
       gap: 14px;
+    }
+
+    @media (max-width: 760px) {
+      .shell { grid-template-columns: 1fr; }
+      .sidebar { display: none; }
     }
 
     .card {
@@ -400,9 +456,21 @@
   </style>
 </head>
 <body>
+  <div class="topbar">
+    <a href="https://github.com/eartigau/stability_3bodies" class="home-pill" target="_blank">GitHub</a>
+    <a href="https://eartigau.github.io/" class="home-pill">&larr; Home</a>
+  </div>
+  <div class="shell">
+    <nav class="sidebar" aria-label="Page navigation">
+      <div class="sidebar-logo">Triple Stability</div>
+      <div class="sidebar-sub">Hierarchical triple &amp; Kozai-Lidov calculator</div>
+      <a class="nav-link" href="#calculator">Calculator</a>
+      <a class="nav-link" href="#stable-region">Stable region</a>
+      <a class="nav-link" href="#kozai-lidov">Kozai-Lidov timescale</a>
+      <a class="nav-link" href="#computation-logic">Computation logic</a>
+    </nav>
   <main class="app">
-    <section class="card hero">
-      <a href="https://eartigau.github.io" style="display:inline-block;margin-bottom:0.75em;font-size:0.85em;color:var(--accent);text-decoration:none;">← eartigau.github.io</a>
+    <section id="calculator" class="card hero">
       <h1>Hierarchical Triple Stability: Visual Calculator</h1>
       <p>
         Diagram-driven view of two close-in masses and one distant companion. Enter the inner-binary semi-major axis and the observed present-day outer separation, then inspect the stable region in the a<sub>out</sub>-e<sub>out</sub> plane.
@@ -504,7 +572,7 @@
 
         <div class="results" id="result"></div>
 
-        <div class="plot-card">
+        <div id="stable-region" class="plot-card">
           <h2>Stable Region in a<sub>out</sub> vs e<sub>out</sub></h2>
           <p>Patterned cells satisfy the stability criterion (///) and observed-separation compatibility (\\\). Cross-hatched regions show where both conditions overlap, using s<sub>obs</sub> &lt;= a<sub>out</sub> (1 + e<sub>out</sub>).</p>
           <canvas id="stabilityPlot" width="900" height="340"></canvas>
@@ -513,13 +581,13 @@
           </p>
         </div>
 
-        <div class="timescale-card">
+        <div id="kozai-lidov" class="timescale-card">
           <h2>Kozai-Lidov Timescale</h2>
           <p>Quadrupole-order estimate along the observed-separation column, using a<sub>out</sub> = s<sub>obs</sub>. The panel shows the effect of the outer eccentricity at e<sub>out</sub> = 0, e<sub>max</sub>/2, and e<sub>max</sub>, and includes the adopted e<sub>in</sub> correction.</p>
           <div class="timescale-grid" id="klPanel"></div>
         </div>
 
-        <div class="explain-card">
+        <div id="computation-logic" class="explain-card">
           <h2>Computation Logic (Step by Step)</h2>
           <p>This panel expands the arithmetic used by the code for the current inputs and explains how the plotted boundaries and printed outputs are obtained.</p>
           <div class="explain-text" id="mathExplainText"></div>
@@ -528,6 +596,7 @@
       </section>
     </section>
   </main>
+  </div>
 
   <script>
     const defaults = {
